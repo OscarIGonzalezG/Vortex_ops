@@ -1,0 +1,24 @@
+# docker-compose.yml - orquestacion de Vortex Ops
+# Define los servicios (contenedores) que necesita el proyecto.
+
+services:
+  # Aquí iremos agregando: postgres, backend, frontend
+  postgres:
+    image: postgres:16-alpine # Utilizamos la imagen oficial de Postgres en su versión 16 con Alpine Linux para un contenedor ligero.
+    container_name: vortex-postgres # Asignamos un nombre al contenedor para facilitar su identificación.
+    restart: unless-stopped # Si el contenedor se cae solo, lo reiniciamos automáticamente, a menos que lo detengamos manualmente.
+    environment: # Definimos las variables de entorno necesarias para configurar la base de datos.
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes: # Mapea una carpeta de Docker (vortex-postgres-data) a la carpeta interna de PostgreSQL donde se guardan los datos.
+      - vortex-postgres-data:/var/lib/postgresql/data
+    ports: # el formato es "HOST:CONTENEDOR". 5432 en tu Windows → 5432 dentro del contenedor
+      - "${POSTGRES_PORT}:5432"
+    healthcheck: # comando que PostgreSQL trae para decir "estoy listo"
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+volumes:
+  vortex-postgres-data:
