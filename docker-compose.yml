@@ -20,5 +20,33 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+  backend:
+    build:
+      context: ./apps/backend # Construye la imagen del backend a partir del Dockerfile ubicado en ./apps/backend
+      dockerfile: Dockerfile # Especifica el nombre del Dockerfile a utilizar para construir la imagen del backend.
+    container_name: vortex-backend # Asignamos un nombre al contenedor del backend para facilitar su identificación.
+    restart: unless-stopped # Si el contenedor se cae solo, lo reiniciamos automáticamente, a menos que lo detengamos manualmente.
+    ports:
+      - "3001:3000" # Mapea el puerto 3001 del host al puerto 3000 del contenedor, permitiendo acceder al backend desde el host.
+    environment: 
+      PORT: 3000 # Puerto en el que el backend escuchará las solicitudes entrantes.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public # URL de conexión a la base de datos Postgres, utilizando las variables de entorno definidas anteriormente.
+      JWT_SECRET: ${JWT_SECRET} # Clave secreta para la generación y verificación de tokens JWT, definida en el archivo .env.
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN} # Tiempo de expiración
+    depends_on:
+      postgres:
+        condition: service_healthy # Asegura que el backend solo se inicie después de que el servicio de Postgres esté saludable. 
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: vortex-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    depends_on:
+      - backend
 volumes:
   vortex-postgres-data:
